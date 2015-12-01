@@ -1,0 +1,41 @@
+<!doctype html>
+
+<html>
+  <head>
+    <title>The Julia set</title>
+    <script src="complex.js"></script>
+    <script src="julia.js"></script>
+    <script src="mandelbrot_view.js"></script>
+    <style>
+      canvas {
+        border: 1px solid black;
+      }
+    </style>
+  </head>
+
+  <body>
+    <canvas id="canvas" width="800" height="800"></canvas>
+    <script>
+      var min = new Complex(-2, -2);
+      var max = new Complex(2, 2);
+      var canvas = document.getElementById('canvas');
+
+      var size = max.subtract(min);
+      var xScale = canvas.width / size.real;
+      var yScale = canvas.height / size.imaginary;
+
+      var julia = new Julia(min, max, canvas.width, canvas.height, new Complex(-0.2, 0.7));
+      var mandelbrotView = new MandelbrotView(julia, canvas, window.requestAnimationFrame.bind(window));
+      mandelbrotView.startDrawing();
+
+      canvas.addEventListener('mousemove', function (event) {
+        var rect = canvas.getBoundingClientRect();
+        var x = event.clientX - rect.left;
+        var y = event.clientY - rect.top;
+        var position = min.add(new Complex(x / xScale, y / yScale));
+
+        mandelbrotView.mandelbrot = new Julia(min, max, canvas.width, canvas.height, position);
+      });
+    </script>
+  </body>
+</html>
