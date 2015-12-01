@@ -1,0 +1,49 @@
+<!doctype html>
+
+<html>
+  <head>
+    <title>The Mandelbrot set</title>
+    <script src="complex.js"></script>
+    <script src="mandelbrot.js"></script>
+    <script src="mandelbrot_view.js"></script>
+    <style>
+      canvas {
+        border: 1px solid black;
+      }
+    </style>
+  </head>
+
+  <body>
+    <canvas id="canvas" width="800" height="800"></canvas>
+    <script>
+      var min = new Complex(-2, -1.25);
+      var max = new Complex(0.5, 1.25);
+      var canvas = document.getElementById('canvas');
+
+      var size = max.subtract(min);
+      var xScale = canvas.width / size.real;
+      var yScale = canvas.height / size.imaginary;
+      var zoom = 2;
+
+      var mandelbrot = new Mandelbrot(min, max, canvas.width, canvas.height);
+      var mandelbrotView = new MandelbrotView(mandelbrot, canvas, window.requestAnimationFrame.bind(window));
+      mandelbrotView.startDrawing();
+
+      canvas.addEventListener('click', function (event) {
+        var rect = canvas.getBoundingClientRect();
+        var x = event.clientX - rect.left;
+        var y = event.clientY - rect.top;
+        var position = min.add(new Complex(x / xScale, y / yScale));
+
+        var offset = position.subtract(min).scale(1 / zoom);
+        min = position.subtract(offset);
+        size = size.scale(1 / zoom);
+        max = min.add(size);
+        xScale = canvas.width / size.real;
+        yScale = canvas.height / size.imaginary;
+
+        mandelbrotView.mandelbrot = new Mandelbrot(min, max, canvas.width, canvas.height);
+      });
+    </script>
+  </body>
+</html>
