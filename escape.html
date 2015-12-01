@@ -1,0 +1,129 @@
+<!doctype html>
+
+<html>
+  <head>
+    <script src="complex.js"></script>
+    <script src="simulation.js"></script>
+  </head>
+
+  <body>
+    <canvas id="canvas" width="800" height="800"></canvas>
+    <script>
+      var canvas = document.getElementById('canvas');
+      var context = canvas.getContext('2d');
+
+      var min = new Complex(-2, -2);
+      var max = new Complex(2, 2);
+
+      var size = max.subtract(min);
+      var xScale = canvas.width / size.real;
+      var yScale = canvas.height / size.imaginary;
+
+      var pointSize = 5;
+      var lineWidth = 1;
+
+      var simulation = new Simulation(min, max);
+      var lastUpdate = new Date().getTime();
+
+      context.scale(xScale, yScale);
+      context.translate(-min.real, -min.imaginary);
+
+      context.lineWidth = lineWidth / xScale;
+      var pointWidth = pointSize / xScale;
+      var pointHeight = pointSize / yScale;
+
+      var update = function () {
+        var now = new Date().getTime();
+        var elapsedTime = now - lastUpdate;
+        lastUpdate = now;
+
+        simulation.update(elapsedTime);
+
+        context.clearRect(min.real, min.imaginary, size.real, size.imaginary);
+
+        context.strokeStyle = 'red';
+
+        context.setLineDash([0.01, 0.03]);
+        context.beginPath();
+        context.arc(0, 0, 2, 0, Math.PI * 2);
+        context.stroke();
+
+        context.setLineDash([]);
+        context.beginPath();
+        context.moveTo(min.real, 0);
+        context.lineTo(max.real, 0);
+        context.moveTo(0, min.imaginary);
+        context.lineTo(0, max.imaginary);
+        context.stroke();
+
+        context.fillStyle = 'black';
+        context.strokeStyle = 'rgba(0, 0, 0, 0.25)';
+        context.beginPath();
+        simulation.particles.forEach(function (particle) {
+          var x = particle.origin.real;
+          var y = particle.origin.imaginary;
+          context.moveTo(particle.position.real, particle.position.imaginary);
+          context.lineTo(x, y);
+          context.fillRect(x - pointWidth / 2, y - pointHeight / 2, pointWidth, pointHeight);
+        });
+        context.stroke();
+
+        context.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        simulation.particles.forEach(function (particle) {
+          var x = particle.position.real;
+          var y = particle.position.imaginary;
+          context.fillRect(x - pointWidth / 2, y - pointHeight / 2, pointWidth, pointHeight);
+        });
+
+        window.requestAnimationFrame(update);
+      };
+
+      var addParticle = function (event) {
+        var rect = canvas.getBoundingClientRect();
+        var x = event.clientX - rect.left;
+        var y = event.clientY - rect.top;
+        var position = min.add(new Complex(x / xScale, y / yScale));
+
+        simulation.particles.push(new Particle(position, new Complex(0, 0), position));
+      };
+
+      canvas.addEventListener('click', addParticle);
+
+      var dragging = false;
+      var startDragging = function () { dragging = true; };
+      var stopDragging = function () { dragging = false; };
+
+      canvas.addEventListener('mousedown', startDragging);
+      canvas.addEventListener('mouseup', stopDragging);
+      canvas.addEventListener('mouseleave', stopDragging);
+      canvas.addEventListener('mousemove', function (event) {
+        if (dragging) {
+          addParticle(event);
+        }
+      });
+
+      document.addEventListener('keydown', function (event) {
+        switch (String.fromCharCode(event.which)) {
+        case 'C':
+          simulation.particles = [];
+          event.preventDefault();
+          break;
+
+        case ' ':
+          var zero = new Complex(0, 0);
+
+          for (var i = 0; i < 1000; ++i) {
+            var position = new Complex(min.real + Math.random() * size.real, min.imaginary + Math.random() * size.imaginary);
+
+            simulation.particles.push(new Particle(position, zero, position));
+          }
+
+          event.preventDefault();
+          break;
+        }
+      });
+
+      update();
+    </script>
+  </body>
+</html>
